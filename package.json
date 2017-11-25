@@ -1,0 +1,31 @@
+{
+  "name": "image-delivery",
+  "version": "1.0.0",
+  "description": "image delivery microservice",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vaneavasco/image-delivery.git"
+  },
+  "keywords": [
+    "image",
+    "delivery",
+    "microservice",
+    "node"
+  ],
+  "author": "vanea vasco",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vaneavasco/image-delivery/issues"
+  },
+  "homepage": "https://github.com/vaneavasco/image-delivery#readme",
+  "dependencies": {
+    "express": "^4.16.2",
+    "jimp": "^0.2.28",
+    "lodash": "^4.17.4",
+    "mime-types": "^2.1.17"
+  }
+}
