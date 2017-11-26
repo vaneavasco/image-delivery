@@ -1,4 +1,4 @@
-const expect  =require('expect');
+const expect = require('expect');
 const request = require('supertest');
 const fs = require('fs');
 const path = require('path');
@@ -21,7 +21,7 @@ describe('GET /image', () => {
         });
     });
 
-    it('should return a 404 status code', function(done) {
+    it('should return a 404 status code', function (done) {
         request(app)
             .get('/image/someimage.jpg')
             .expect(404, done);

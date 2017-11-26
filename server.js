@@ -1,10 +1,8 @@
 const express = require('express');
-
 const _ = require('lodash');
 const mime = require('mime-types');
-const resize = require('./modules/resize');
 const storage = require('./modules/storage');
-const cache = require('./modules/cache');
+const imageService = require('./modules/image-service');
 
 let app = express();
 
@@ -19,6 +17,10 @@ let sendImage = function (imagePath, res) {
 
 let parseResizeParameters = (queryString) => {
     "use strict";
+    if (_.isEmpty(queryString)) {
+        return {};
+    }
+
     const resizeParams = _.split(queryString, 'x');
     if (resizeParams.length !== 2 || isNaN(resizeParams[0]) || isNaN(resizeParams[1])) {
         throw new Error('Invalid size.');
@@ -30,39 +32,23 @@ let parseResizeParameters = (queryString) => {
     };
 };
 
-app.get('/image/:image', (req, res, next) => {
-    let image = req.params.image;
-    let imagePath = storage.buildImagePath(image);
-
-    if (storage.imageExists(imagePath)) {
-        if (!_.isEmpty(req.query.size)) {
-            let resizeParameters = {};
-            try {
-                resizeParameters = parseResizeParameters(req.query.size);
-            } catch (e) {
-                return res.status(400).send(e.toString());
-            }
-
-            let processedImagePath = cache.getCached(image, resizeParameters.width, resizeParameters.height);
-            if (_.isNull(processedImagePath)) {
-                processedImagePath = storage.resizeImagePath(storage.buildResizedImageName(image, resizeParameters.width, resizeParameters.height));
-                resize.resizeImage(imagePath, processedImagePath, resizeParameters.width, resizeParameters.height).then(
-                    (imagePath) => {
-                        return sendImage(imagePath, res);
-
-                    }, (error) => {
-                        res.status(500).send();
-                    });
-            } else {
-                sendImage(processedImagePath, res);
-            }
-        } else {
-            return sendImage(imagePath, res);
-        }
-
-    } else {
-        res.status(404).send();
+app.get('/image/:image', (req, res) => {
+    const image = req.params.image;
+    let resizeParameters = {};
+    try {
+        resizeParameters = parseResizeParameters(req.query.size);
+    } catch (e) {
+        return res.status(400).send();
     }
+
+    imageService.getImage(image, resizeParameters, (imagePath, error) => {
+        "use strict";
+        if (_.isEmpty(error)) {
+            return sendImage(imagePath, res);
+        } else {
+            return res.status(error.statusCode).send();
+        }
+    });
 });
 
 app.listen(3000, () => {
