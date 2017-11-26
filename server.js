@@ -1,12 +1,12 @@
 const express = require('express');
 
 const _ = require('lodash');
-let app = express();
 const mime = require('mime-types');
-
 const resize = require('./modules/resize');
 const storage = require('./modules/storage');
 const cache = require('./modules/cache');
+
+let app = express();
 
 let sendImage = function (imagePath, res) {
     res.writeHead(200, {
