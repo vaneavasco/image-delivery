@@ -2,8 +2,6 @@ const express = require('express');
 
 const _ = require('lodash');
 let app = express();
-const path = require('path');
-const fs = require('fs');
 const mime = require('mime-types');
 
 const resize = require('./modules/resize');
@@ -11,15 +9,25 @@ const storage = require('./modules/storage');
 const cache = require('./modules/cache');
 
 let sendImage = function (imagePath, res) {
-    let stat = fs.statSync(imagePath);
-
     res.writeHead(200, {
-        'Content-Type': mime.contentType(path.extname(imagePath)),
-        'Content-Length': stat.size,
+        'Content-Type': mime.contentType(storage.getExtName(imagePath)),
+        'Content-Length': storage.getImageSize(imagePath),
     });
 
-    let readStream = fs.createReadStream(imagePath);
-    readStream.pipe(res);
+    storage.getImageStream(imagePath).pipe(res);
+};
+
+let parseResizeParameters = (queryString) => {
+    "use strict";
+    const resizeParams = _.split(queryString, 'x');
+    if (resizeParams.length !== 2 || isNaN(resizeParams[0]) || isNaN(resizeParams[1])) {
+        throw new Error('Invalid size.');
+    }
+
+    return {
+        width: _.parseInt(resizeParams[0]),
+        height: _.parseInt(resizeParams[1])
+    };
 };
 
 app.get('/image/:image', (req, res, next) => {
@@ -28,18 +36,17 @@ app.get('/image/:image', (req, res, next) => {
 
     if (storage.imageExists(imagePath)) {
         if (!_.isEmpty(req.query.size)) {
-            const resizeParams = _.split(req.query.size, 'x');
-            if (resizeParams.length !== 2) {
-                return res.status(400).send();
+            let resizeParameters = {};
+            try {
+                resizeParameters = parseResizeParameters(req.query.size);
+            } catch (e) {
+                return res.status(400).send(e.toString());
             }
 
-            let width = _.parseInt(resizeParams[0]);
-            let height = _.parseInt(resizeParams[1]);
-
-            let processedImagePath = cache.getCached(image, width, height);
+            let processedImagePath = cache.getCached(image, resizeParameters.width, resizeParameters.height);
             if (_.isNull(processedImagePath)) {
-                processedImagePath = storage.resizeImagePath(storage.buildResizedImageName(image, width, height));
-                resize.resizeImage(imagePath, processedImagePath, width, height).then(
+                processedImagePath = storage.resizeImagePath(storage.buildResizedImageName(image, resizeParameters.width, resizeParameters.height));
+                resize.resizeImage(imagePath, processedImagePath, resizeParameters.width, resizeParameters.height).then(
                     (imagePath) => {
                         return sendImage(imagePath, res);
 
