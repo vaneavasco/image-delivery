@@ -1,11 +1,14 @@
-let express = require('express');
+const express = require('express');
 
-let _ = require('lodash');
+const _ = require('lodash');
 let app = express();
-let path = require('path');
-let fs = require('fs');
-let mime = require('mime-types');
-let jimp = require('jimp');
+const path = require('path');
+const fs = require('fs');
+const mime = require('mime-types');
+
+const resize = require('./modules/resize');
+const storage = require('./modules/storage');
+const cache = require('./modules/cache');
 
 let sendImage = function (imagePath, res) {
     let stat = fs.statSync(imagePath);
@@ -19,43 +22,13 @@ let sendImage = function (imagePath, res) {
     readStream.pipe(res);
 };
 
-let buildResizedImageName = (imageName, witdh, height) => {
-    "use strict";
-    return `${witdh}x${height}_${imageName}`;
-};
-
-let buildImagePath = function (imageName) {
-    "use strict";
-    return path.join(__dirname, 'storage', imageName);
-};
-
-let resizeImagePath = (imageName) => {
-    "use strict";
-    return path.join(__dirname, 'storage', 'resized', imageName);
-};
-
-let resizeImage = (inputPath, outputPath, witdh, height) => {
-    "use strict";
-    jimp.read(inputPath, function (err, image) {
-        if (err) {
-            console.log(err);
-            throw err;
-        }
-        image.resize(witdh, height)
-            .write(outputPath);
-
-        return outputPath;
-    });
-};
-
-
-app.get('/image/:image', (req, res) => {
+app.get('/image/:image', (req, res, next) => {
     let image = req.params.image;
-    let imagePath = buildImagePath(image);
+    let imagePath = storage.buildImagePath(image);
 
-    if (fs.existsSync(imagePath)) {
+    if (storage.imageExists(imagePath)) {
         if (!_.isEmpty(req.query.size)) {
-            let resizeParams = _.split(req.query.size, 'x');
+            const resizeParams = _.split(req.query.size, 'x');
             if (resizeParams.length !== 2) {
                 return res.status(400).send();
             }
@@ -63,20 +36,26 @@ app.get('/image/:image', (req, res) => {
             let width = _.parseInt(resizeParams[0]);
             let height = _.parseInt(resizeParams[1]);
 
-            let cachedImagePath = resizeImagePath(buildResizedImageName(image, width, height));
-            if (!fs.existsSync(cachedImagePath)) {
-                try {
-                    imagePath = resizeImage(imagePath, cachedImagePath, width, height);
-                } catch (e) {
-                    res.status(500).send();
-                }
+            let processedImagePath = cache.getCached(image, width, height);
+            if (_.isNull(processedImagePath)) {
+                processedImagePath = storage.resizeImagePath(storage.buildResizedImageName(image, width, height));
+                resize.resizeImage(imagePath, processedImagePath, width, height).then(
+                    (imagePath) => {
+                        return sendImage(imagePath, res);
 
+                    }, (error) => {
+                        res.status(500).send();
+                    });
+            } else {
+                sendImage(processedImagePath, res);
             }
+        } else {
+            return sendImage(imagePath, res);
         }
-        return sendImage(imagePath, res);
-    }
 
-    res.status(404).send();
+    } else {
+        res.status(404).send();
+    }
 });
 
 app.listen(3000, () => {
