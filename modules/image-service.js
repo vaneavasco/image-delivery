@@ -9,7 +9,7 @@ let getImage = (image, resizeParameters, cb) => {
         return cb(imagePath, {statusCode: 404});
     }
 
-    if(_.isEmpty(resizeParameters)) {
+    if (_.isEmpty(resizeParameters)) {
         return cb(imagePath, {});
     }
 
