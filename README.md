@@ -1,6 +1,6 @@
 # Image delivery microservice
 
-Run app: `node server.js` 
+Run app: `npm start` 
 
 Run tests: `npm run test`
 
