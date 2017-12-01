@@ -41,6 +41,25 @@ let saveImage = (imagePath, contents, callback) => {
     return fs.writeFile(imagePath, contents, callback);
 };
 
+let cleanImageName = (imageName) => {
+    return path.basename(imageName);
+};
+
+let countImages = (path) => {
+    let files = fs.readdirSync(path);
+
+    return files.length;
+};
+
+let countOriginalImages = () => {
+    return countImages(basePath) - 1;
+};
+
+let countResizedImages = () => {
+    return countImages(path.join(basePath, 'resized'));
+
+};
+
 module.exports = {
     buildImagePath,
     resizeImagePath,
@@ -49,5 +68,8 @@ module.exports = {
     getImageSize,
     getImageStream,
     getExtName,
-    saveImage
+    saveImage,
+    cleanImageName,
+    countOriginalImages,
+    countResizedImages
 };

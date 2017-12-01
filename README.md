@@ -1,8 +1,17 @@
 # Image delivery microservice
 
-Run app: `npm start` 
+Run with docker: `docker-compose up`
 
-Run tests: `npm run test`
+Run tests: `npm run test` (inside the service docker container)
+
+## URLs
+1. Image delivery service: http://localhost:3000
+
+⋅⋅* /image
+
+..* /stats
+
+2. Graphite dashboard: http://localhost:5000/dashboard
 
 
 ## Examples
@@ -14,7 +23,21 @@ GET http://localhost:3000/image/cat.jpg
 
 GET http://localhost:3000/image/cat.jpg?size=100x100
 
-## To do
-1. Add metrics with statsd
+3. Get image stats
 
-2. Figure out the spies tests for caching. 
+GET http://localhost:3000/stats
+
+
+## Monitoring
+
+Namespace: **stats_counts.image_delivery**:
+1. resize_success 
+2. resize_error
+3. image_not_found
+4. cache_hit
+5. cache_miss
+6. invalid_image
+7. image_not_retrieved
+
+## To do
+1. Figure out the spies tests for caching. 

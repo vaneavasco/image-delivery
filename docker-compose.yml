@@ -1,0 +1,15 @@
+version: '2'
+
+services:
+  image-delivery:
+    build: .
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - 3000:3000
+
+  metrics-local:
+    image: hopsoft/graphite-statsd
+    ports:
+      - 5000:80
+      - 8125:8125/udp
